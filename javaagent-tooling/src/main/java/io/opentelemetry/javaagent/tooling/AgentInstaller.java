@@ -35,6 +35,7 @@ import io.opentelemetry.javaagent.tooling.config.ConfigPropertiesBridge;
 import io.opentelemetry.javaagent.tooling.ignore.IgnoredClassLoadersMatcher;
 import io.opentelemetry.javaagent.tooling.ignore.IgnoredTypesBuilderImpl;
 import io.opentelemetry.javaagent.tooling.ignore.IgnoredTypesMatcher;
+import io.opentelemetry.javaagent.tooling.instrumentation.SpanDurationTrackingContextStorage;
 import io.opentelemetry.javaagent.tooling.muzzle.AgentTooling;
 import io.opentelemetry.javaagent.tooling.util.Trie;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
@@ -74,6 +75,12 @@ public class AgentInstaller {
 
   private static final String STRICT_CONTEXT_STRESSOR_MILLIS =
       "otel.javaagent.testing.strict-context-stressor-millis";
+
+  private static final String TRACK_START_EVENT_NAME =
+      "otel.javaagent.track.start.event.name";
+
+  static final String TRACK_STOP_EVENT_NAME =
+      "otel.javaagent.track.stop.event.name";
 
   private static final Map<String, List<Runnable>> CLASS_LOAD_CALLBACKS = new HashMap<>();
 
@@ -115,6 +122,12 @@ public class AgentInstaller {
     ConfigProperties sdkConfig = autoConfiguredSdk.getConfig();
     InstrumentationConfig.internalInitializeConfig(new ConfigPropertiesBridge(sdkConfig));
     copyNecessaryConfigToSystemProperties(sdkConfig);
+
+    Map<String, String> startSpanEventMapping = sdkConfig.getMap(TRACK_START_EVENT_NAME);
+    if (!startSpanEventMapping.isEmpty()) {
+      io.opentelemetry.context.ContextStorage.addWrapper(
+          storage -> new SpanDurationTrackingContextStorage(storage, startSpanEventMapping));
+    }
 
     setBootstrapPackages(sdkConfig, extensionClassLoader);
 
