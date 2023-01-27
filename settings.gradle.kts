@@ -108,6 +108,7 @@ include(":instrumentation-api-semconv")
 include(":instrumentation-annotations")
 include(":instrumentation-annotations-support")
 include(":instrumentation-annotations-support-testing")
+include(":instrumentation-class-scanner")
 
 // misc
 include(":dependencyManagement")
